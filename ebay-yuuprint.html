@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eBay → ゆうプリタッチ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+JP:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --card: #151d2e;
+    --border: #1e2d4a;
+    --accent: #3b6ef8;
+    --accent2: #22c55e;
+    --text: #c8d8f8;
+    --muted: #4a6a9a;
+    --error: #ef4444;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans JP', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    padding: 20px 16px 60px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* ---- Header ---- */
+  .header { margin-bottom: 24px; }
+  .header-label {
+    font-size: 9px; letter-spacing: 0.2em;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 4px;
+  }
+  .header h1 {
+    font-size: 20px; font-weight: 600; color: #e8f0ff; letter-spacing: -0.02em;
+  }
+
+  /* ---- API Key ---- */
+  .apikey-wrap {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+  }
+  .apikey-wrap label {
+    font-size: 9px; color: var(--muted); letter-spacing: 0.12em;
+    text-transform: uppercase; display: block; margin-bottom: 6px;
+  }
+  .apikey-row { display: flex; gap: 8px; align-items: center; }
+  .apikey-row input {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-family: var(--mono);
+    font-size: 12px; padding: 8px 10px; outline: none;
+  }
+  .apikey-row input:focus { border-color: var(--accent); }
+  .btn-save {
+    background: var(--accent); border: none; border-radius: 6px;
+    color: #fff; font-family: var(--mono); font-size: 11px;
+    padding: 8px 12px; cursor: pointer; white-space: nowrap;
+  }
+  .key-ok { font-size: 10px; color: var(--accent2); margin-top: 5px; }
+
+  /* ---- Upload ---- */
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 12px;
+    padding: 26px 16px; text-align: center; cursor: pointer;
+    background: var(--surface); margin-bottom: 10px;
+    transition: border-color 0.2s;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); }
+  .upload-zone.loading { border-color: #3b6ef888; cursor: wait; }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-label { font-size: 13px; color: #5a7ee0; }
+  .upload-sub { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  /* ---- Messages ---- */
+  .msg {
+    border-radius: 8px; padding: 10px 13px;
+    font-size: 11px; margin-bottom: 10px; line-height: 1.5;
+  }
+  .msg.error { background: #2d1010; border: 1px solid #7a2020; color: #f87171; }
+  .msg.debug { background: #0a1628; border: 1px solid var(--border); color: #5a82b8; white-space: pre-wrap; word-break: break-all; }
+  .msg-label { font-size: 9px; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.1em; }
+
+  /* ---- Fields ---- */
+  .fields-label {
+    font-size: 9px; color: var(--muted); letter-spacing: 0.12em;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .field {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 9px;
+    transition: border-color 0.15s;
+  }
+  .field:focus-within { border-color: #2a4a8a; }
+  .field-label {
+    font-size: 9px; color: var(--muted); letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 5px;
+  }
+  .field-row { display: flex; align-items: center; gap: 8px; }
+  .field-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-family: var(--mono); font-size: 14px; padding: 0;
+  }
+  .btn-copy {
+    border: none; border-radius: 6px; font-family: var(--mono);
+    font-size: 11px; padding: 5px 11px; cursor: pointer;
+    white-space: nowrap; transition: background 0.15s; min-width: 62px;
+    background: #1a2a50; color: #6b92e8;
+  }
+  .btn-copy.done { background: #166534; color: #86efac; }
+
+  /* ---- Reset ---- */
+  .btn-reset {
+    width: 100%; margin-top: 14px; background: transparent;
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--muted); font-family: var(--mono); font-size: 11px;
+    padding: 9px; cursor: pointer;
+  }
+  .btn-reset:hover { border-color: #2a4a8a; color: var(--text); }
+
+  /* ---- Text fallback ---- */
+  details { margin-bottom: 14px; }
+  summary {
+    font-size: 11px; color: var(--muted); cursor: pointer;
+    padding: 6px 0; user-select: none; letter-spacing: 0.04em;
+  }
+  details textarea {
+    width: 100%; margin-top: 8px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: var(--mono); font-size: 12px;
+    padding: 10px; resize: vertical;
+  }
+  .btn-parse {
+    width: 100%; margin-top: 6px; background: #1a2a50; border: none;
+    border-radius: 8px; color: #6b92e8; font-family: var(--mono);
+    font-size: 12px; padding: 9px; cursor: pointer;
+  }
+
+  .empty-hint {
+    text-align: center; color: #1e2d4a; font-size: 12px; margin-top: 30px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">eBay → ゆうプリタッチ</div>
+  <h1>住所ラベル抽出ツール</h1>
+</div>
+
+<!-- API Key -->
+<div class="apikey-wrap">
+  <label>Gemini API Key</label>
+  <div class="apikey-row">
+    <input type="password" id="apiKeyInput" placeholder="AIza..." autocomplete="off" />
+    <button class="btn-save" onclick="saveKey()">保存</button>
+  </div>
+  <div class="key-ok" id="keyOk" style="display:none">✓ キー設定済み</div>
+</div>
+
+<!-- Upload -->
+<div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+  <div class="upload-icon" id="uploadIcon">📷</div>
+  <div class="upload-label" id="uploadLabel">スクショ画像をタップして選択</div>
+  <div class="upload-sub">PNG / JPG 対応</div>
+</div>
+<input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(this.files[0])">
+
+<!-- Error -->
+<div class="msg error" id="errorMsg" style="display:none"></div>
+
+<!-- Debug -->
+<div class="msg debug" id="debugMsg" style="display:none">
+  <div class="msg-label">DEBUG</div>
+  <span id="debugText"></span>
+</div>
+
+<!-- Text fallback -->
+<details>
+  <summary>テキストで貼り付ける場合</summary>
+  <textarea id="rawText" rows="6" placeholder="注文詳細のテキストをここに貼り付け…"></textarea>
+  <button class="btn-parse" onclick="parseText()">テキストから抽出</button>
+</details>
+
+<!-- Fields -->
+<div id="fieldsSection" style="display:none">
+  <div class="fields-label">各項目 → コピーボタンでゆうプリタッチへ</div>
+  <div id="fieldsContainer"></div>
+  <button class="btn-reset" onclick="resetAll()">リセット</button>
+</div>
+
+<div class="empty-hint" id="emptyHint">画像を選択すると項目が表示されます</div>
+
+<script>
+const FIELDS = [
+  { key: "name",      label: "氏名" },
+  { key: "country",   label: "国名・地域" },
+  { key: "address",   label: "住所" },
+  { key: "taxFull",   label: "税番号（住所欄用）" },
+  { key: "state",     label: "州名" },
+  { key: "zip",       label: "郵便番号" },
+  { key: "phone",     label: "電話番号" },
+  { key: "vatNumber", label: "VAT番号" },
+  { key: "vatStatus", label: "支払条件" },
+  { key: "shipping",  label: "配送サービス" },
+];
+
+// --- API Key ---
+let apiKey = localStorage.getItem("gemini_key") || "";
+if (apiKey) {
+  document.getElementById("apiKeyInput").value = apiKey;
+  document.getElementById("keyOk").style.display = "block";
+}
+function saveKey() {
+  apiKey = document.getElementById("apiKeyInput").value.trim();
+  localStorage.setItem("gemini_key", apiKey);
+  document.getElementById("keyOk").style.display = apiKey ? "block" : "none";
+}
+
+// --- Upload ---
+const zone = document.getElementById("uploadZone");
+zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("drag"); });
+zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
+zone.addEventListener("drop", e => { e.preventDefault(); zone.classList.remove("drag"); handleFile(e.dataTransfer.files[0]); });
+
+function setLoading(on) {
+  zone.classList.toggle("loading", on);
+  document.getElementById("uploadIcon").textContent = on ? "⏳" : "📷";
+  document.getElementById("uploadLabel").textContent = on ? "AI読み取り中…" : "スクショ画像をタップして選択";
+}
+
+function showError(msg) {
+  const el = document.getElementById("errorMsg");
+  el.textContent = msg;
+  el.style.display = msg ? "block" : "none";
+}
+
+function showDebug(msg) {
+  document.getElementById("debugText").textContent = msg;
+  document.getElementById("debugMsg").style.display = msg ? "block" : "none";
+}
+
+async function handleFile(file) {
+  if (!file) return;
+  if (!apiKey) { showError("先にGemini APIキーを入力して保存してください"); return; }
+
+  setLoading(true);
+  showError("");
+  showDebug("");
+
+  try {
+    // リサイズ＆JPEG変換
+    const base64 = await resizeToBase64(file);
+    showDebug(`読込OK | ${file.name} | JPEG変換後 | ${Math.round(base64.length/1024)}KB`);
+
+    const prompt = `This is an eBay order details screenshot (UI may be in Japanese).
+Extract the shipping address and return ONLY a valid JSON object with these keys:
+name, country, address, state, zip, phone, shipping, taxFull, vatNumber, vatStatus
+- address: street line only (house number + street name)
+- state: city or county or province
+- taxFull: full tax line e.g. "GB 365 6085 76 Code:Paid"
+- vatNumber: number part only e.g. "GB 365 6085 76"
+- vatStatus: status part only e.g. "Paid"
+Empty string for missing fields. Return ONLY the JSON, no markdown.`;
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: "image/jpeg", data: base64 } },
+              { text: prompt }
+            ]
+          }]
+        })
+      }
+    );
+
+    const rawBody = await res.text();
+    showDebug(`読込OK | ${file.name} | JPEG変換後 | ${Math.round(base64.length/1024)}KB\nHTTP ${res.status} | ${rawBody.slice(0, 300)}`);
+
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { msg = JSON.parse(rawBody)?.error?.message || msg; } catch {}
+      throw new Error(msg);
+    }
+
+    const data = JSON.parse(rawBody);
+    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    if (!aiText) throw new Error("Geminiからテキストが返ってきませんでした");
+
+    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error(`JSON形式が見つかりません: ${aiText.slice(0, 100)}`);
+
+    const result = JSON.parse(jsonMatch[0]);
+    renderFields(result);
+
+  } catch(e) {
+    showError(`エラー: ${e.message}`);
+  }
+  setLoading(false);
+}
+
+function resizeToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("ファイル読み込み失敗"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("画像デコード失敗"));
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.85).split(",")[1]);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// --- Render fields ---
+function renderFields(data) {
+  const container = document.getElementById("fieldsContainer");
+  container.innerHTML = "";
+  FIELDS.forEach(({ key, label }) => {
+    const val = data[key] || "";
+    const div = document.createElement("div");
+    div.className = "field";
+    div.innerHTML = `
+      <div class="field-label">${label}</div>
+      <div class="field-row">
+        <input class="field-input" id="field_${key}" value="${escHtml(val)}" />
+        <button class="btn-copy" onclick="copyField('${key}', this)">コピー</button>
+      </div>`;
+    container.appendChild(div);
+  });
+  document.getElementById("fieldsSection").style.display = "block";
+  document.getElementById("emptyHint").style.display = "none";
+}
+
+function copyField(key, btn) {
+  const val = document.getElementById("field_" + key).value;
+  if (!val) return;
+  navigator.clipboard.writeText(val).then(() => {
+    btn.textContent = "✓ 完了";
+    btn.classList.add("done");
+    setTimeout(() => { btn.textContent = "コピー"; btn.classList.remove("done"); }, 1500);
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function resetAll() {
+  document.getElementById("fieldsSection").style.display = "none";
+  document.getElementById("emptyHint").style.display = "block";
+  showError(""); showDebug("");
+  document.getElementById("fileInput").value = "";
+}
+
+// --- Text fallback ---
+function parseText() {
+  const text = document.getElementById("rawText").value;
+  const result = { name:"", country:"", address:"", taxFull:"", state:"", zip:"", phone:"", vatNumber:"", vatStatus:"", shipping:"" };
+  const taxM = text.match(/((?:GB|EU|IM)\s[\d\s]{6,})\s*Code:(\w+)/i);
+  if (taxM) { result.vatNumber = taxM[1].trim(); result.vatStatus = taxM[2].trim(); result.taxFull = `${result.vatNumber} Code:${result.vatStatus}`; }
+  const phoneM = text.match(/(\+\d[\d\s\-]{9,})/);
+  if (phoneM) result.phone = phoneM[1].trim();
+  const shipM = text.match(/(Economy International|Priority Mail International|First Class International|Standard International)[^\n]*/i);
+  if (shipM) result.shipping = shipM[0].trim();
+  const countryM = text.match(/United Kingdom|United States|Canada|Australia|France|Germany|Italy|Spain|Netherlands/i);
+  if (countryM) result.country = countryM[0];
+  const zipM = text.match(/\b([A-Z]{1,2}\d{1,2}[A-Z]?\s\d[A-Z]{2}|\d{5}(?:-\d{4})?)\b/i);
+  if (zipM) result.zip = zipM[1];
+  const lines = text.split("\n").map(l=>l.trim()).filter(Boolean);
+  const skip = /Economy|Priority|Standard|First|Code:|United |GB |EU |\+\d|お届け先|配送|税金|商品/;
+  const addrLines = lines.filter(l => !skip.test(l) && l.length > 1);
+  if (addrLines[0]) result.name = addrLines[0];
+  if (addrLines[1]) result.address = addrLines[1];
+  if (addrLines[2]) result.state = addrLines[2];
+  renderFields(result);
+}
+</script>
+</body>
+</html>
