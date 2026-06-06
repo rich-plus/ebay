@@ -1,3 +1,5 @@
+$ cat /home/user/ebay/ebay-yuuprint.html
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -33,7 +35,6 @@
     margin: 0 auto;
   }
 
-  /* ---- Header ---- */
   .header { margin-bottom: 24px; }
   .header-label {
     font-size: 9px; letter-spacing: 0.2em;
@@ -43,7 +44,6 @@
     font-size: 20px; font-weight: 600; color: #e8f0ff; letter-spacing: -0.02em;
   }
 
-  /* ---- API Key ---- */
   .apikey-wrap {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
@@ -66,7 +66,6 @@
   }
   .key-ok { font-size: 10px; color: var(--accent2); margin-top: 5px; }
 
-  /* ---- Upload ---- */
   .upload-zone {
     border: 2px dashed var(--border); border-radius: 12px;
     padding: 26px 16px; text-align: center; cursor: pointer;
@@ -79,7 +78,6 @@
   .upload-label { font-size: 13px; color: #5a7ee0; }
   .upload-sub { font-size: 10px; color: var(--muted); margin-top: 4px; }
 
-  /* ---- Messages ---- */
   .msg {
     border-radius: 8px; padding: 10px 13px;
     font-size: 11px; margin-bottom: 10px; line-height: 1.5;
@@ -88,7 +86,6 @@
   .msg.debug { background: #0a1628; border: 1px solid var(--border); color: #5a82b8; white-space: pre-wrap; word-break: break-all; }
   .msg-label { font-size: 9px; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.1em; }
 
-  /* ---- Fields ---- */
   .fields-label {
     font-size: 9px; color: var(--muted); letter-spacing: 0.12em;
     text-transform: uppercase; margin-bottom: 10px;
@@ -116,7 +113,6 @@
   }
   .btn-copy.done { background: #166534; color: #86efac; }
 
-  /* ---- Reset ---- */
   .btn-reset {
     width: 100%; margin-top: 14px; background: transparent;
     border: 1px solid var(--border); border-radius: 8px;
@@ -125,7 +121,6 @@
   }
   .btn-reset:hover { border-color: #2a4a8a; color: var(--text); }
 
-  /* ---- Text fallback ---- */
   details { margin-bottom: 14px; }
   summary {
     font-size: 11px; color: var(--muted); cursor: pointer;
@@ -146,6 +141,12 @@
   .empty-hint {
     text-align: center; color: #1e2d4a; font-size: 12px; margin-top: 30px;
   }
+
+  .section-divider {
+    font-size: 9px; color: var(--muted); letter-spacing: 0.12em;
+    text-transform: uppercase; margin: 14px 0 10px;
+    border-top: 1px solid var(--border); padding-top: 10px;
+  }
 </style>
 </head>
 <body>
@@ -155,7 +156,6 @@
   <h1>住所ラベル抽出ツール</h1>
 </div>
 
-<!-- API Key -->
 <div class="apikey-wrap">
   <label>Gemini API Key</label>
   <div class="apikey-row">
@@ -165,7 +165,6 @@
   <div class="key-ok" id="keyOk" style="display:none">✓ キー設定済み</div>
 </div>
 
-<!-- Upload -->
 <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
   <div class="upload-icon" id="uploadIcon">📷</div>
   <div class="upload-label" id="uploadLabel">スクショ画像をタップして選択</div>
@@ -173,23 +172,19 @@
 </div>
 <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(this.files[0])">
 
-<!-- Error -->
 <div class="msg error" id="errorMsg" style="display:none"></div>
 
-<!-- Debug -->
 <div class="msg debug" id="debugMsg" style="display:none">
   <div class="msg-label">DEBUG</div>
   <span id="debugText"></span>
 </div>
 
-<!-- Text fallback -->
 <details>
   <summary>テキストで貼り付ける場合</summary>
   <textarea id="rawText" rows="6" placeholder="注文詳細のテキストをここに貼り付け…"></textarea>
   <button class="btn-parse" onclick="parseText()">テキストから抽出</button>
 </details>
 
-<!-- Fields -->
 <div id="fieldsSection" style="display:none">
   <div class="fields-label">各項目 → コピーボタンでゆうプリタッチへ</div>
   <div id="fieldsContainer"></div>
@@ -199,10 +194,10 @@
 <div class="empty-hint" id="emptyHint">画像を選択すると項目が表示されます</div>
 
 <script>
-const FIELDS = [
+const BASE_FIELDS = [
   { key: "name",      label: "氏名" },
   { key: "country",   label: "国名・地域" },
-  { key: "address",   label: "住所" },
+  { key: "address",   label: "住所（番地＋街名）" },
   { key: "taxFull",   label: "税番号（住所欄用）" },
   { key: "state",     label: "州名" },
   { key: "zip",       label: "郵便番号" },
@@ -212,7 +207,16 @@ const FIELDS = [
   { key: "shipping",  label: "配送サービス" },
 ];
 
-// --- API Key ---
+const CARD_FIELDS = [
+  { key: "hinmei",    label: "品名" },
+  { key: "hscode",    label: "HSコード" },
+];
+
+const PRICE_FIELDS = [
+  { key: "totalUSD",  label: "総額（USD）" },
+  { key: "totalJPY",  label: "内容品合計金額（円）" },
+];
+
 let apiKey = localStorage.getItem("gemini_key") || "";
 if (apiKey) {
   document.getElementById("apiKeyInput").value = apiKey;
@@ -224,7 +228,6 @@ function saveKey() {
   document.getElementById("keyOk").style.display = apiKey ? "block" : "none";
 }
 
-// --- Upload ---
 const zone = document.getElementById("uploadZone");
 zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("drag"); });
 zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
@@ -247,6 +250,14 @@ function showDebug(msg) {
   document.getElementById("debugMsg").style.display = msg ? "block" : "none";
 }
 
+async function fetchUsdToJpy() {
+  try {
+    const res = await fetch("https://open.er-api.com/v6/latest/USD");
+    const data = await res.json();
+    return data.rates?.JPY || null;
+  } catch { return null; }
+}
+
 async function handleFile(file) {
   if (!file) return;
   if (!apiKey) { showError("先にGemini APIキーを入力して保存してください"); return; }
@@ -256,19 +267,23 @@ async function handleFile(file) {
   showDebug("");
 
   try {
-    // リサイズ＆JPEG変換
     const base64 = await resizeToBase64(file);
     showDebug(`読込OK | ${file.name} | JPEG変換後 | ${Math.round(base64.length/1024)}KB`);
 
     const prompt = `This is an eBay order details screenshot (UI may be in Japanese).
-Extract the shipping address and return ONLY a valid JSON object with these keys:
-name, country, address, state, zip, phone, shipping, taxFull, vatNumber, vatStatus
-- address: street line only (house number + street name)
-- state: city or county or province
-- taxFull: full tax line e.g. "GB 365 6085 76 Code:Paid"
-- vatNumber: number part only e.g. "GB 365 6085 76"
-- vatStatus: status part only e.g. "Paid"
-Empty string for missing fields. Return ONLY the JSON, no markdown.`;
+Extract the following and return ONLY a valid JSON object with these keys:
+name, country, address, state, zip, phone, shipping, taxFull, vatNumber, vatStatus, productName, totalUSD
+
+Rules:
+- address: street number + street name + city (e.g. "34 Concord Circuit, Albanvale"). Include the city/suburb.
+- state: state or province abbreviation only (e.g. "VIC", "WA", "NSW")
+- taxFull: full tax line e.g. "ABN#64652016681 Code:PAID"
+- vatNumber: number part only
+- vatStatus: status part only e.g. "PAID"
+- productName: full product name from the order
+- totalUSD: total price as a number only (e.g. 53.77), no $ sign
+
+Empty string or 0 for missing fields. Return ONLY the JSON, no markdown.`;
 
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
@@ -303,7 +318,32 @@ Empty string for missing fields. Return ONLY the JSON, no markdown.`;
     if (!jsonMatch) throw new Error(`JSON形式が見つかりません: ${aiText.slice(0, 100)}`);
 
     const result = JSON.parse(jsonMatch[0]);
-    renderFields(result);
+
+    // カード判定
+    const isCard = /card|pokemon/i.test(result.productName || "");
+
+    // 為替レート取得
+    let jpyRate = null;
+    if (result.totalUSD) {
+      jpyRate = await fetchUsdToJpy();
+    }
+
+    // 追加フィールド組み立て
+    if (isCard) {
+      result.hinmei = "Used Trading Card";
+      result.hscode = "9504400000";
+    }
+    if (result.totalUSD) {
+      result.totalUSD = `$${result.totalUSD}`;
+      if (jpyRate) {
+        const usd = parseFloat(String(result.totalUSD).replace("$",""));
+        result.totalJPY = `¥${Math.round(usd * jpyRate).toLocaleString()}`;
+      } else {
+        result.totalJPY = "為替レート取得失敗";
+      }
+    }
+
+    renderFields(result, isCard);
 
   } catch(e) {
     showError(`エラー: ${e.message}`);
@@ -336,11 +376,11 @@ function resizeToBase64(file) {
   });
 }
 
-// --- Render fields ---
-function renderFields(data) {
+function renderFields(data, isCard) {
   const container = document.getElementById("fieldsContainer");
   container.innerHTML = "";
-  FIELDS.forEach(({ key, label }) => {
+
+  const addField = (key, label) => {
     const val = data[key] || "";
     const div = document.createElement("div");
     div.className = "field";
@@ -351,7 +391,27 @@ function renderFields(data) {
         <button class="btn-copy" onclick="copyField('${key}', this)">コピー</button>
       </div>`;
     container.appendChild(div);
-  });
+  };
+
+  const addDivider = (label) => {
+    const div = document.createElement("div");
+    div.className = "section-divider";
+    div.textContent = label;
+    container.appendChild(div);
+  };
+
+  BASE_FIELDS.forEach(({ key, label }) => addField(key, label));
+
+  if (isCard) {
+    addDivider("カード情報");
+    CARD_FIELDS.forEach(({ key, label }) => addField(key, label));
+  }
+
+  if (data.totalUSD) {
+    addDivider("金額");
+    PRICE_FIELDS.forEach(({ key, label }) => addField(key, label));
+  }
+
   document.getElementById("fieldsSection").style.display = "block";
   document.getElementById("emptyHint").style.display = "none";
 }
@@ -377,27 +437,27 @@ function resetAll() {
   document.getElementById("fileInput").value = "";
 }
 
-// --- Text fallback ---
 function parseText() {
   const text = document.getElementById("rawText").value;
-  const result = { name:"", country:"", address:"", taxFull:"", state:"", zip:"", phone:"", vatNumber:"", vatStatus:"", shipping:"" };
-  const taxM = text.match(/((?:GB|EU|IM)\s[\d\s]{6,})\s*Code:(\w+)/i);
+  const result = { name:"", country:"", address:"", taxFull:"", state:"", zip:"", phone:"", vatNumber:"", vatStatus:"", shipping:"", productName:"", totalUSD:"" };
+  const taxM = text.match(/((?:GB|EU|IM|ABN#?)\s?[\d\s]{6,})\s*Code:(\w+)/i);
   if (taxM) { result.vatNumber = taxM[1].trim(); result.vatStatus = taxM[2].trim(); result.taxFull = `${result.vatNumber} Code:${result.vatStatus}`; }
   const phoneM = text.match(/(\+\d[\d\s\-]{9,})/);
   if (phoneM) result.phone = phoneM[1].trim();
-  const shipM = text.match(/(Economy International|Priority Mail International|First Class International|Standard International)[^\n]*/i);
+  const shipM = text.match(/(Economy International|Priority Mail International|First Class International|Standard International|Expedited International)[^\n]*/i);
   if (shipM) result.shipping = shipM[0].trim();
   const countryM = text.match(/United Kingdom|United States|Canada|Australia|France|Germany|Italy|Spain|Netherlands/i);
   if (countryM) result.country = countryM[0];
-  const zipM = text.match(/\b([A-Z]{1,2}\d{1,2}[A-Z]?\s\d[A-Z]{2}|\d{5}(?:-\d{4})?)\b/i);
+  const zipM = text.match(/\b([A-Z]{1,2}\d{1,2}[A-Z]?\s\d[A-Z]{2}|\d{4,5}(?:-\d{4})?)\b/i);
   if (zipM) result.zip = zipM[1];
   const lines = text.split("\n").map(l=>l.trim()).filter(Boolean);
-  const skip = /Economy|Priority|Standard|First|Code:|United |GB |EU |\+\d|お届け先|配送|税金|商品/;
+  const skip = /Economy|Priority|Standard|First|Expedited|Code:|United |GB |EU |ABN|\+\d|お届け先|配送|税金|商品/;
   const addrLines = lines.filter(l => !skip.test(l) && l.length > 1);
   if (addrLines[0]) result.name = addrLines[0];
   if (addrLines[1]) result.address = addrLines[1];
   if (addrLines[2]) result.state = addrLines[2];
-  renderFields(result);
+  const isCard = /card|pokemon/i.test(result.productName);
+  renderFields(result, isCard);
 }
 </script>
 </body>
