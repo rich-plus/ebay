@@ -275,8 +275,9 @@ Extract the following and return ONLY a valid JSON object with these keys:
 name, country, address, state, zip, phone, shipping, taxFull, vatNumber, vatStatus, productName, totalUSD
 
 Rules:
-- address: street number + street name + city (e.g. "34 Concord Circuit, Albanvale"). Include the city/suburb.
-- state: state or province abbreviation only (e.g. "VIC", "WA", "NSW")
+- address: ALL address lines between the recipient name and the country, EXCLUDING the postcode and state/county. Join multiple lines with ", ". Example: "The Airfield, Perranporth Airfield, St. Agnes, Higher Trevellas" or "34 Concord Circuit, Albanvale"
+- state: county or region name ONLY (e.g. "Cornwall", "VIC", "WA"). NEVER include digits or postcode characters here.
+- zip: the FULL postcode including spaces (e.g. "TR5 0XS", "3021", "WA 6432")
 - taxFull: full tax line e.g. "ABN#64652016681 Code:PAID"
 - vatNumber: number part only
 - vatStatus: status part only e.g. "PAID"
