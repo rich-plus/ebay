@@ -282,7 +282,7 @@ Rules:
 - vatNumber: number part only
 - vatStatus: status part only e.g. "PAID"
 - productName: full product name from the order
-- totalUSD: total price as a number only (e.g. 53.77), no $ sign
+- sku: the SKU / custom label value (e.g. "260630AA02TRK"). Empty string if not found.
 
 Empty string or 0 for missing fields. Return ONLY the JSON, no markdown.`;
 
@@ -331,7 +331,8 @@ Empty string or 0 for missing fields. Return ONLY the JSON, no markdown.`;
 
     // 追加フィールド組み立て
     if (isCard) {
-      result.hinmei = "Used Trading Card";
+      const skuPart = result.sku ? `（SKU:${result.sku}）` : "";
+result.hinmei = `Used Trading Card${skuPart}`;
       result.hscode = "9504400000";
     }
     if (result.totalUSD) {
