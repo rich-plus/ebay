@@ -188,6 +188,8 @@ $ cat /home/user/ebay/ebay-yuuprint.html
 <div id="fieldsSection" style="display:none">
   <div class="fields-label">各項目 → コピーボタンでゆうプリタッチへ</div>
   <div id="fieldsContainer"></div>
+  <a id="bookmarkletLink" style="display:none;margin-bottom:10px;padding:10px;background:#1a2a50;color:#6b92e8;border-radius:8px;text-decoration:none;font-size:11px;display:none;word-break:break-all;"></a>
+  <button class="btn-reset" style="margin-bottom:8px;border-color:#3b6ef8;color:#6b92e8;" onclick="generateBookmarklet()">ゆうプリタッチ 自動入力ブックマークを生成</button>
   <button class="btn-reset" onclick="resetAll()">リセット</button>
 </div>
 
@@ -217,6 +219,19 @@ const PRICE_FIELDS = [
   { key: "totalUSD",  label: "総額（USD）" },
   { key: "totalJPY",  label: "内容品合計金額（円）" },
 ];
+
+const COUNTRY_CODE = {
+  "United Kingdom":"GB","United States":"US","Australia":"AU","Canada":"CA",
+  "France":"FR","Germany":"DE","Italy":"IT","Spain":"ES","Netherlands":"NL",
+  "New Zealand":"NZ","Singapore":"SG","Hong Kong":"HK","Taiwan":"TW",
+  "Korea":"KR","Ireland":"IE","Belgium":"BE","Sweden":"SE","Norway":"NO",
+  "Denmark":"DK","Finland":"FI","Switzerland":"CH","Austria":"AT",
+  "Portugal":"PT","Poland":"PL","Czech":"CZ","Hungary":"HU",
+  "Greece":"GR","Romania":"RO","Malaysia":"MY","Thailand":"TH",
+  "Philippines":"PH","Indonesia":"ID","Vietnam":"VN","India":"IN",
+  "Brazil":"BR","Mexico":"MX","Israel":"IL","South Africa":"ZA",
+  "UAE":"AE","United Arab Emirates":"AE","Isle of Man":"IM",
+};
 
 let apiKey = localStorage.getItem("gemini_key") || "";
 if (apiKey) {
@@ -432,7 +447,34 @@ function copyField(key, btn) {
 function escHtml(s) {
   return s.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
-
+function generateBookmarklet() {
+  const d = {};
+  document.querySelectorAll('.field-input').forEach(el => {
+    const key = el.id.replace('field_','');
+    d[key] = el.value;
+  });
+  const couCode = COUNTRY_CODE[d.country] || '';
+  const js = `javascript:(function(){
+    var n=document.getElementById('addr_name');
+    var c=document.getElementById('addr_couCode');
+    var a=document.getElementById('addr_addr');
+    var s=document.getElementById('addr_state');
+    var z=document.getElementById('addr_postal');
+    var t=document.getElementById('addr_tel');
+    if(n)n.value=${JSON.stringify(d.name||'')};
+    if(c){for(var i=0;i<c.options.length;i++){if(c.options[i].value==${JSON.stringify(couCode)}){c.selectedIndex=i;if(typeof countryCtrl==='function')countryCtrl(${JSON.stringify(couCode)});break;}}}
+    if(a)a.value=${JSON.stringify(d.address||'')};
+    if(s)s.value=${JSON.stringify(d.state||'')};
+    if(z)z.value=${JSON.stringify(d.zip||'')};
+    if(t)t.value=${JSON.stringify(d.phone||'')};
+    alert('入力完了！');
+  })();`;
+  const link = document.getElementById('bookmarkletLink');
+  link.href = js;
+  link.style.display = 'block';
+  link.textContent = '★ ゆうプリタッチ自動入力（ブックマークに追加してください）';
+}
+  
 function resetAll() {
   document.getElementById("fieldsSection").style.display = "none";
   document.getElementById("emptyHint").style.display = "block";
