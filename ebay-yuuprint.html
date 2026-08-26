@@ -332,7 +332,7 @@ Empty string or 0 for missing fields. Return ONLY the JSON, no markdown.`;
 
     // 追加フィールド組み立て
     if (isCard) {
-      const skuPart = result.sku ? `（SKU:${result.sku}）` : "";
+      const skuPart = result.sku ? `(SKU:${result.sku})` : "";
 result.hinmei = `Used Trading Card${skuPart}`;
       result.hscode = "9504400000";
     }
