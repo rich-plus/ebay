@@ -463,7 +463,7 @@ function generateBookmarklet() {
     d[key] = el.value;
   });
   const couCode = COUNTRY_CODE[d.country] || '';
-  const js = `javascript:(function(){var n=document.getElementById('addr_name');var c=document.getElementById('addr_couCode');var a=document.getElementById('addr_addr');var s=document.getElementById('addr_state');var z=document.getElementById('addr_postal');var t=document.getElementById('addr_tel');if(n)n.value=${JSON.stringify(d.name||'')};if(c){for(var i=0;i<c.options.length;i++){if(c.options[i].value==${JSON.stringify(couCode)}){c.selectedIndex=i;if(typeof countryCtrl==='function')countryCtrl(${JSON.stringify(couCode)});break;}}}if(a)a.value=${JSON.stringify(d.address||'')};if(s)s.value=${JSON.stringify(d.state||'')};if(z)z.value=${JSON.stringify(d.zip||'')};if(t)t.value=${JSON.stringify(d.phone||'')};alert('✓ 入力完了！');})();`;
+  const js = `javascript:(function(){var n=document.getElementById('addr_name');var c=document.getElementById('addr_couCode');var a=document.getElementById('addr_addr');var s=document.getElementById('addr_state');var z=document.getElementById('addr_postal');var t=document.getElementById('addr_tel');if(n)n.value=${JSON.stringify(d.name||'')};if(c){for(var i=0;i<c.options.length;i++){if(c.options[i].value==${JSON.stringify(couCode)}){c.selectedIndex=i;if(typeof countryCtrl==='function')countryCtrl(${JSON.stringify(couCode)});break;}}}if(a)a.value=${JSON.stringify((d.address||'') + (d.taxFull ? '\n\n' + d.taxFull : ''))};if(s)s.value=${JSON.stringify(d.state||'')};if(z)z.value=${JSON.stringify(d.zip||'')};if(t)t.value=${JSON.stringify(d.phone||'')};alert('✓ 入力完了！');})();`;
 
   const wrap = document.getElementById('bookmarkletWrap');
   const link = document.getElementById('bookmarkletLink');
