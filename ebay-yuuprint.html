@@ -369,7 +369,8 @@ result.hinmei = `Used Trading Card${skuPart}`;
         result.totalJPY = "為替レート取得失敗";
       }
     }
-
+result.taxFull = toHankaku(result.taxFull || '');
+result.address = toHankaku(result.address || '');
     renderFields(result, isCard);
 
   } catch(e) {
@@ -402,7 +403,16 @@ function resizeToBase64(file) {
     reader.readAsDataURL(file);
   });
 }
-
+function toHankaku(str) {
+  return str
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/：/g, ':')
+    .replace(/；/g, ';')
+    .replace(/　/g, ' ')
+    .replace(/＃/g, '#')
+    .replace(/（/g, '(')
+    .replace(/）/g, ')');
+}
 function renderFields(data, isCard) {
   const container = document.getElementById("fieldsContainer");
   container.innerHTML = "";
@@ -498,6 +508,7 @@ function parseText() {
   if (addrLines[1]) result.address = addrLines[1];
   if (addrLines[2]) result.state = addrLines[2];
   const isCard = /card|pokemon/i.test(result.productName);
+  
   renderFields(result, isCard);
 }
 </script>
