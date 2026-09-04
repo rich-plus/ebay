@@ -1,11 +1,15 @@
-$ cat /home/user/ebay/ebay-yuuprint.html
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>eBay → ゆうプリタッチ</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3b6ef8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ゆうプリ">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjMyIiBmaWxsPSIjMGEwZTE3Ii8+PHJlY3QgeD0iMjAiIHk9IjIwIiB3aWR0aD0iMTUyIiBoZWlnaHQ9IjE1MiIgcng9IjIwIiBmaWxsPSIjM2I2ZWY4Ii8+PHRleHQgeD0iOTYiIHk9IjEzMCIgZm9udC1zaXplPSI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPiYjeDI3MDk7PC90ZXh0Pjwvc3ZnPg==">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+JP:wght@400;500&display=swap');
 
@@ -147,6 +151,19 @@ $ cat /home/user/ebay/ebay-yuuprint.html
     text-transform: uppercase; margin: 14px 0 10px;
     border-top: 1px solid var(--border); padding-top: 10px;
   }
+
+  .yuupri-btn {
+    width: 100%; background: #0d1f3c; border: 1px solid #2a4a8a;
+    border-radius: 8px; color: #6b92e8; font-family: var(--mono);
+    font-size: 13px; padding: 12px 14px; cursor: pointer;
+    text-align: left; transition: background 0.15s; display: flex;
+    justify-content: space-between; align-items: center; margin-bottom: 8px;
+  }
+  .yuupri-btn:active { background: #1a2a50; }
+  .yuupri-btn.done { background: #0d2a1a; border-color: #166534; color: #86efac; }
+  .yuupri-btn-label { font-size: 9px; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.1em; }
+  .yuupri-btn-val { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; }
+  .yuupri-btn-tag { font-size: 10px; flex-shrink: 0; margin-left: 8px; }
 </style>
 </head>
 <body>
@@ -186,19 +203,30 @@ $ cat /home/user/ebay/ebay-yuuprint.html
 </details>
 
 <div id="fieldsSection" style="display:none">
-  <div class="fields-label">各項目 → コピーボタンでゆうプリタッチへ</div>
-  <div id="fieldsContainer"></div>
- <div id="bookmarkletWrap" style="display:none;background:#0d1f3c;border:1px solid #2a4a8a;border-radius:10px;padding:12px;margin-bottom:10px;">
-  <div style="font-size:10px;color:#5a82b8;margin-bottom:8px;line-height:1.6;">
-    ① 下のリンクを<b style="color:#6b92e8">ブックマークバーにドラッグして保存</b><br>
-    ② <a href="https://www.int-mypage.post.japanpost.jp/smart/MSC1000Login" target="_blank" style="color:#3b6ef8;">ゆうプリタッチ</a>を開いてお届け先入力ページへ進む<br>
-    ③ 保存したブックマークをクリック → 自動入力！
+
+  <!-- ゆうプリタッチ 入力ガイド -->
+  <div id="yuupriGuide" style="display:none;margin-bottom:6px;">
+    <div class="section-divider" style="margin-top:0;">ゆうプリタッチ 入力ガイド（タップしてコピー）</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:10px;">
+      <a href="https://www.int-mypage.post.japanpost.jp/smart/MSC1000Login" target="_blank" style="color:#3b6ef8;">ゆうプリタッチ</a> のお届け先入力画面で、順番にタップ→貼り付け
+    </div>
+    <div id="yuupriButtons"></div>
   </div>
-  <a id="bookmarkletLink" href="#" style="display:block;padding:9px 12px;background:#1a2a50;color:#6b92e8;border-radius:6px;text-decoration:none;font-size:11px;word-break:break-all;">
-    ★ ゆうプリタッチ 自動入力（ここをブックマークバーにドラッグ）
-  </a>
-</div>
-<button class="btn-reset" style="margin-bottom:8px;border-color:#3b6ef8;color:#6b92e8;" onclick="generateBookmarklet()">ゆうプリタッチ 自動入力ブックマークを生成</button>
+
+  <div class="fields-label" style="margin-top:14px;">全項目（個別コピー）</div>
+  <div id="fieldsContainer"></div>
+
+  <div id="bookmarkletWrap" style="display:none;background:#0d1f3c;border:1px solid #2a4a8a;border-radius:10px;padding:12px;margin-bottom:10px;">
+    <div style="font-size:10px;color:#5a82b8;margin-bottom:8px;line-height:1.6;">
+      ① 下のリンクを<b style="color:#6b92e8">ブックマークバーにドラッグして保存</b><br>
+      ② <a href="https://www.int-mypage.post.japanpost.jp/smart/MSC1000Login" target="_blank" style="color:#3b6ef8;">ゆうプリタッチ</a>を開いてお届け先入力ページへ進む<br>
+      ③ 保存したブックマークをクリック → 自動入力！
+    </div>
+    <a id="bookmarkletLink" href="#" style="display:block;padding:9px 12px;background:#1a2a50;color:#6b92e8;border-radius:6px;text-decoration:none;font-size:11px;word-break:break-all;">
+      ★ ゆうプリタッチ 自動入力（ここをブックマークバーにドラッグ）
+    </a>
+  </div>
+  <button class="btn-reset" style="margin-bottom:8px;border-color:#3b6ef8;color:#6b92e8;" onclick="generateBookmarklet()">PC用：自動入力ブックマークを生成</button>
   <button class="btn-reset" onclick="resetAll()">リセット</button>
 </div>
 
@@ -283,6 +311,17 @@ async function fetchUsdToJpy() {
   } catch { return null; }
 }
 
+function toHankaku(str) {
+  return str
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/：/g, ':')
+    .replace(/；/g, ';')
+    .replace(/　/g, ' ')
+    .replace(/＃/g, '#')
+    .replace(/（/g, '(')
+    .replace(/）/g, ')');
+}
+
 async function handleFile(file) {
   if (!file) return;
   if (!apiKey) { showError("先にGemini APIキーを入力して保存してください"); return; }
@@ -345,19 +384,16 @@ Empty string or 0 for missing fields. Return ONLY the JSON, no markdown.`;
 
     const result = JSON.parse(jsonMatch[0]);
 
-    // カード判定
     const isCard = /card|pokemon/i.test(result.productName || "");
 
-    // 為替レート取得
     let jpyRate = null;
     if (result.totalUSD) {
       jpyRate = await fetchUsdToJpy();
     }
 
-    // 追加フィールド組み立て
     if (isCard) {
       const skuPart = result.sku ? `(SKU:${result.sku})` : "";
-result.hinmei = `Used Trading Card${skuPart}`;
+      result.hinmei = `Used Trading Card${skuPart}`;
       result.hscode = "9504400000";
     }
     if (result.totalUSD) {
@@ -369,14 +405,60 @@ result.hinmei = `Used Trading Card${skuPart}`;
         result.totalJPY = "為替レート取得失敗";
       }
     }
-result.taxFull = toHankaku(result.taxFull || '');
-result.address = toHankaku(result.address || '');
+
+    result.taxFull = toHankaku(result.taxFull || '');
+    result.address = toHankaku(result.address || '');
+
+    renderYuupriGuide(result);
     renderFields(result, isCard);
 
   } catch(e) {
     showError(`エラー: ${e.message}`);
   }
   setLoading(false);
+}
+
+function renderYuupriGuide(data) {
+  const guide = document.getElementById('yuupriGuide');
+  const container = document.getElementById('yuupriButtons');
+  container.innerHTML = '';
+
+  const addrVal = (data.address || '') + (data.taxFull ? '\n\n' + data.taxFull : '');
+
+  const items = [
+    { step: '① 氏名', value: data.name || '' },
+    { step: '② 国名・地域', value: data.country || '' },
+    { step: '③ 住所（税番号込み）', value: addrVal },
+    { step: '④ 州名', value: data.state || '' },
+    { step: '⑤ 郵便番号', value: data.zip || '' },
+    { step: '⑥ 電話番号', value: data.phone || '' },
+  ];
+
+  items.forEach(item => {
+    if (!item.value) return;
+    const wrap = document.createElement('div');
+    const preview = item.value.replace(/\n/g, ' / ');
+    wrap.innerHTML = `
+      <div class="yuupri-btn-label">${item.step}</div>
+      <button class="yuupri-btn" onclick="copyTextBtn(${JSON.stringify(item.value)}, this)">
+        <span class="yuupri-btn-val">${escHtml(preview)}</span>
+        <span class="yuupri-btn-tag">コピー</span>
+      </button>`;
+    container.appendChild(wrap);
+  });
+
+  guide.style.display = 'block';
+}
+
+function copyTextBtn(val, btn) {
+  navigator.clipboard.writeText(val).then(() => {
+    btn.classList.add('done');
+    btn.querySelector('.yuupri-btn-tag').textContent = '✓ コピー済み';
+    setTimeout(() => {
+      btn.classList.remove('done');
+      btn.querySelector('.yuupri-btn-tag').textContent = 'コピー';
+    }, 2000);
+  });
 }
 
 function resizeToBase64(file) {
@@ -403,16 +485,7 @@ function resizeToBase64(file) {
     reader.readAsDataURL(file);
   });
 }
-function toHankaku(str) {
-  return str
-    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
-    .replace(/：/g, ':')
-    .replace(/；/g, ';')
-    .replace(/　/g, ' ')
-    .replace(/＃/g, '#')
-    .replace(/（/g, '(')
-    .replace(/）/g, ')');
-}
+
 function renderFields(data, isCard) {
   const container = document.getElementById("fieldsContainer");
   container.innerHTML = "";
@@ -466,6 +539,7 @@ function copyField(key, btn) {
 function escHtml(s) {
   return s.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
+
 function generateBookmarklet() {
   const d = {};
   document.querySelectorAll('.field-input').forEach(el => {
@@ -480,10 +554,12 @@ function generateBookmarklet() {
   link.href = js;
   wrap.style.display = 'block';
 }
-  
+
 function resetAll() {
   document.getElementById("fieldsSection").style.display = "none";
+  document.getElementById("yuupriGuide").style.display = "none";
   document.getElementById("emptyHint").style.display = "block";
+  document.getElementById("bookmarkletWrap").style.display = "none";
   showError(""); showDebug("");
   document.getElementById("fileInput").value = "";
 }
@@ -508,7 +584,7 @@ function parseText() {
   if (addrLines[1]) result.address = addrLines[1];
   if (addrLines[2]) result.state = addrLines[2];
   const isCard = /card|pokemon/i.test(result.productName);
-  
+  renderYuupriGuide(result);
   renderFields(result, isCard);
 }
 </script>
